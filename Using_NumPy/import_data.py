@@ -12,10 +12,32 @@ from PIL import Image
 
 
 
-def load_data():
+def load_data(val_size=0.2):
+    """
+    Convert images to arrays and return them randomized through training and 
+    validation set.
 
-    list_pikachu = glob.glob('data/pikachu/*')
-    list_rondoudou = glob.glob('data/rondoudou/*')
+    Parameters
+    ----------
+    val_size : float, optional
+        Part of validation set. The default is 0.2.
+
+    Returns
+    -------
+    data_train : np.array of shape (m, HEIGHT, WIDTH, C)
+        Training set.
+    label_train : np.array of shape (m, 1)
+        Labels of the training set.
+    data_val : np.array of shape (m, HEIGHT, WIDTH, C)
+        Validation set.
+    label_val : np.array of shape (m, 1)
+        Labels of the validation set.
+    classes : np.array of shape (2,)
+        Classe names : Pikachu / Rondoudou. They are encode in bytes.
+
+    """
+    list_pikachu = glob.glob('../data/pikachu/*')
+    list_rondoudou = glob.glob('../data/rondoudou/*')
     
     HEIGHT = 100
     WIDTH = 100
@@ -48,7 +70,7 @@ def load_data():
         i+=1
     
     n_samples = dataset_arr.shape[0]
-    n_val = int(0.2 * n_samples)
+    n_val = int(val_size * n_samples)
     shuffled_indices = np.random.permutation(n_samples)
     train_indices = shuffled_indices[:-n_val] 
     val_indices = shuffled_indices[-n_val:]
@@ -63,7 +85,7 @@ def load_data():
     return data_train, label_train, data_val, label_val, classes
 
 
-if __name__ == 'main':
+if False :
     data_train, label_train, data_val, label_val, classes = load_data()
     
     INDEX = np.random.randint(data_train.shape[0])

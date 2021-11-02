@@ -41,7 +41,7 @@ layers_dims = [n_x, 20, 7, 5, n_y] #  4-layers model
 learning_rate = 0.0075
 
 
-def NN_model(X, Y, layers_dims, learning_rate = 0.0075, epochs = 1000, print_cost=False):
+def NN_model(X, Y, layers_dims, learning_rate = 0.0075, epochs = 1000, print_cost=False, lambd=0, keep_prob=1):
     """
     Implements a L-layer neural network: [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID.
 
@@ -72,18 +72,47 @@ def NN_model(X, Y, layers_dims, learning_rate = 0.0075, epochs = 1000, print_cos
     costs = []
     parameters = fc.initialize_parameters(layers_dims)
     
+    print("Training is starting...")
     for epoch in range(1, epochs+1):
         # Forward pass
-        yhat, caches = models.model_forward(X, parameters)
+        if keep_prob == 1:
+            yhat, caches = models.model_forward(X, parameters)
+            
+        elif keep_prob < 1:
+            yhat, caches, listD = models.model_forward_dropout(X, parameters, keep_prob)
+            
         # Compute loss
-        cost = fc.compute_cost(yhat, Y)
+        if lambd == 0:
+            cost = fc.compute_cost(yhat, Y)
+        else:
+            cost = fc.compute_cost_L2regularization(yhat, Y, layers_dims, parameters, lambd)
+        
         # Backward pass
-        grads = models.model_backward(yhat, Y, caches)
+        if lambd == 0 and keep_prob == 1:
+            grads = models.model_backward(yhat, Y, caches)
+            
+        elif lambd != 0 :
+            grads = models.model_backward_L2regularization(yhat, Y, caches, lambd)
+            
+        elif keep_prob < 1:
+            grads = models.model_backward_dropout(yhat, Y, caches, listD, keep_prob)
+        
+        
+        
+        
+        
+        
+        
         # Update parameters
         parameters = models.update_parameters(parameters, grads, learning_rate)
         
-        print("Training is starting...")
-        if print_cost and epoch % 100 == 0 or epoch == epochs - 1:
+        
+        
+        
+        
+        
+        
+        if print_cost and epoch ==1 or epoch % 100 == 0 or epoch == epochs - 1:
             print("{} ------- Cost after iteration {}: {}".format(
                 datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S'), 
                 epoch, 
@@ -100,32 +129,39 @@ parameters, costs = NN_model(data_train,
                              layers_dims, 
                              learning_rate = 0.01,
                              epochs=1000, 
-                             print_cost=True)
+                             print_cost=True,
+                             lambd=1,
+                             keep_prob=1)
 
 
 
 pred_train = models.predict(data_train, label_train, parameters)
-pred_test = models.predict(data_val, label_val, parameters)
+pred_test = models.predict(data_val, label_val, parameters, training_set=False)
 
 
-my_image = "image_test_rondou_1.jpeg"
-my_label_y = [1]
-path = "data/" + my_image
 
-with Image.open(path) as im :
-    im = im.resize((data_train_orig.shape[1], data_train_orig.shape[2]), resample=Image.BICUBIC)
-    im = im.convert("RGB")
-    im.show()
+
+
+test = False
+if test :
+    my_image = "image_test_rondou_1.jpeg"
+    my_label_y = [1]
+    path = "../data/" + my_image
     
-img_arr = np.array(im)
-img_arr = img_arr / 255.
-
-img_arr = img_arr.reshape(1, -1).T
-my_predicted_image = models.predict(img_arr, my_label_y, parameters)
-
-print ("y = " + str(np.squeeze(my_predicted_image)) +
-       ", The model predicts a \"" + 
-       classes[int(np.squeeze(my_predicted_image)),].decode("utf-8") +
-       "\" picture !")
+    with Image.open(path) as im :
+        im = im.resize((data_train_orig.shape[1], data_train_orig.shape[2]), resample=Image.BICUBIC)
+        im = im.convert("RGB")
+        im.show()
+        
+    img_arr = np.array(im)
+    img_arr = img_arr / 255.
+    
+    img_arr = img_arr.reshape(1, -1).T
+    my_predicted_image = models.predict(img_arr, my_label_y, parameters)
+    
+    print ("y = " + str(np.squeeze(my_predicted_image)) +
+           ", The model predicts a \"" + 
+           classes[int(np.squeeze(my_predicted_image)),].decode("utf-8") +
+           "\" picture !")
 
 

@@ -185,7 +185,7 @@ def linear_activation_forward(A_prev, W, b, activation):
     elif activation == "relu":
         Z, linear_cache = linear_forward(A_prev, W, b) 
         A, activation_cache = relu(Z)
-        
+    
     cache = (linear_cache, activation_cache)
     
     return A, cache
@@ -215,6 +215,41 @@ def compute_cost(AL, Y):
     
     return cost
 
+
+def compute_cost_L2regularization(AL, Y, layers_dim, parameters, lambd):
+    """
+    Compute the cost function, sum of the loss function, with L2 regularization.
+
+    Parameters
+    ----------
+    AL : np.array of shape (1, m)
+        Probability vector corresponding to the label predictions. Also called yhat.
+    Y : np.array of shape (1, m)
+        True "label" vector.
+    parameters : dict
+        Output of initialize_parameters_deep().
+    lambd : float
+        Regularization factor
+
+    Returns
+    -------
+    cost : float
+        Cross-entropy cost.
+
+    """
+    m = AL.shape[1]
+    cross_entropy_cost = compute_cost(AL, Y)
+    cst = (1/m)*(lambd/2)
+    
+    somme = 0
+    for l in range(1, len(layers_dim)):
+        W = parameters["W"+str(l)]
+        somme = somme + np.sum(np.square(W))
+    
+    L2_regularization_cost = cst * somme
+    cost = cross_entropy_cost + L2_regularization_cost
+    
+    return cost
 
 def linear_backward(dZ, cache):
     """
@@ -249,7 +284,7 @@ def linear_backward(dZ, cache):
     return dA_prev, dW, db
 
 
-def linear_activation_backward(dA, cache, activation):
+def linear_activation_backward(dA, cache, activation, dropout=None):
     """
     Implement the backward pass for the LINEAR->ACTIVATION layer.
 
@@ -273,6 +308,7 @@ def linear_activation_backward(dA, cache, activation):
 
     """
     linear_cache, activation_cache = cache
+    
     if activation == 'relu':
         dZ = relu_backward(dA, activation_cache)
         dA_prev, dW, db = linear_backward(dZ, linear_cache)
