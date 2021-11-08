@@ -41,7 +41,7 @@ layers_dims = [n_x, 20, 7, 5, n_y] #  4-layers model
 learning_rate = 0.0075
 
 
-def NN_model(X, Y, layers_dims, learning_rate = 0.0075, epochs = 1000, print_cost=False, lambd=0, keep_prob=1):
+def NN_model(X, Y, layers_dims, learning_rate = 0.0075, epochs = 1000, lambd=0, keep_prob=1):
     """
     Implements a L-layer neural network: [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID.
 
@@ -75,11 +75,7 @@ def NN_model(X, Y, layers_dims, learning_rate = 0.0075, epochs = 1000, print_cos
     print("Training is starting...")
     for epoch in range(1, epochs+1):
         # Forward pass
-        if keep_prob == 1:
-            yhat, caches = models.model_forward(X, parameters)
-            
-        elif keep_prob < 1:
-            yhat, caches, listD = models.model_forward_dropout(X, parameters, keep_prob)
+        yhat, caches, listD = models.model_forward(X, parameters, keep_prob)
             
         # Compute loss
         if lambd == 0:
@@ -88,31 +84,13 @@ def NN_model(X, Y, layers_dims, learning_rate = 0.0075, epochs = 1000, print_cos
             cost = fc.compute_cost_L2regularization(yhat, Y, layers_dims, parameters, lambd)
         
         # Backward pass
-        if lambd == 0 and keep_prob == 1:
-            grads = models.model_backward(yhat, Y, caches)
-            
-        elif lambd != 0 :
-            grads = models.model_backward_L2regularization(yhat, Y, caches, lambd)
-            
-        elif keep_prob < 1:
-            grads = models.model_backward_dropout(yhat, Y, caches, listD, keep_prob)
-        
-        
-        
-        
-        
-        
+        grads = models.model_backward(yhat, Y, caches, lambd, listD, keep_prob)
         
         # Update parameters
         parameters = models.update_parameters(parameters, grads, learning_rate)
         
-        
-        
-        
-        
-        
-        
-        if print_cost and epoch ==1 or epoch % 100 == 0 or epoch == epochs - 1:
+        # Printing
+        if epoch==1 or epoch % 100 == 0 or epoch == epochs: #- 1:
             print("{} ------- Cost after iteration {}: {}".format(
                 datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S'), 
                 epoch, 
@@ -129,9 +107,8 @@ parameters, costs = NN_model(data_train,
                              layers_dims, 
                              learning_rate = 0.01,
                              epochs=1000, 
-                             print_cost=True,
-                             lambd=1,
-                             keep_prob=1)
+                             lambd=0,
+                             keep_prob=0.8)
 
 
 

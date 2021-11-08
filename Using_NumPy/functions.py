@@ -22,14 +22,10 @@ def sigmoid(Z):
     -------
     A : np.array of shape Z.shape
         Post-activation parameter
-    cache : np.array 
-        Storing variable for backward pass
 
     """
     A = 1 / (1 + np.exp(-Z))
-    cache = Z
-    
-    return A, cache
+    return A
 
 
 def sigmoid_backward(dA, cache):
@@ -50,7 +46,7 @@ def sigmoid_backward(dA, cache):
 
     """
     Z = cache
-    s = 1/(1+np.exp(-Z))
+    s = sigmoid(Z)
     dZ = dA * s * (1 - s)
     
     return dZ
@@ -73,9 +69,9 @@ def relu(Z):
         Storing variable for backward pass
 
     """
-    A = np.maximum(0,Z)
-    cache = Z
-    return A, cache
+    A = np.maximum(0,Z)    
+    
+    return A
 
 
 def relu_backward(dA, cache):
@@ -121,15 +117,16 @@ def initialize_parameters(layer_dims):
     L = len(layer_dims)
     
     for l in range(1, L):
-        parameters["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) / np.sqrt(layer_dims[l-1]) #*0.01
+        parameters["W" + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) / np.sqrt(layer_dims[l-1])
         parameters["b" + str(l)] = np.zeros((layer_dims[l],1))
     
     return parameters
 
 
-def linear_forward(A, W, b):
+def forward_pass(A_prev, W, b, activation):
     """
-    Forward pass before activation
+    Implement the forward pass
+    LINEAR->ACTIVATION layer
 
     Parameters
     ----------
@@ -139,35 +136,8 @@ def linear_forward(A, W, b):
         Weights matrix.
     b : np.array of size (n[l], 1)
         Bias vector.
-
-    Returns
-    -------
-    Z : np.array of size (layer_dims[l],1)
-        Pre-activation parameter.
-    cache : tuple
-        Storing variable for computing the backward pass efficiently.
-
-    """
-    Z = np.dot(W,A) + b
-    cache = (A, W, b)
-    
-    return Z, cache
-
-
-def linear_activation_forward(A_prev, W, b, activation):
-    """
-    Implement the forward pass LINEAR->ACTIVATION layer
-
-    Parameters
-    ----------
-    A_prev : np.array(n[l-1], m)
-        Activations from previous layer (or input data).
-    W : np.array(n[l], n[l-1])
-        Weights matrix of the current layer.
-    b : np.array(n[l], 1)
-        Bias vector of the current layer..
     activation : str
-        Name of the activation function.
+        Name of activation function.
 
     Returns
     -------
@@ -175,30 +145,34 @@ def linear_activation_forward(A_prev, W, b, activation):
         Post-activation value.
     cache : tuple
         containing "linear_cache" and "activation_cache". Storing variable for 
-        computing the backward pass efficiently
+        computing the backward pass efficiently.
 
     """
-    if activation == 'sigmoid':
-        Z, linear_cache = linear_forward(A_prev, W, b) 
-        A, activation_cache = sigmoid(Z)
-        
-    elif activation == "relu":
-        Z, linear_cache = linear_forward(A_prev, W, b) 
-        A, activation_cache = relu(Z)
+    # print("Shape of W*Aprev : ", np.dot(W, A_prev).shape)
+    # print("Shape of b : ", b.shape)
+    Z = np.dot(W, A_prev) + b
     
+    if activation == "sigmoid":
+        A = sigmoid(Z)
+    elif activation == "relu":
+        A = relu(Z)
+
+    linear_cache = (A_prev, W, b)
+    activation_cache = Z
     cache = (linear_cache, activation_cache)
     
     return A, cache
 
 
-def compute_cost(AL, Y):
+def compute_cost(yhat, Y):
     """
     Compute the cost function, sum of the loss function
 
     Parameters
     ----------
-    AL : np.array of shape (1, m)
-        Probability vector corresponding to the label predictions. Also called yhat.
+    yhat : np.array of shape (1, m)
+        Probability vector corresponding to the label predictions. It's actually
+        the activation at the layer L : AL.
     Y : np.array of shape (1, m)
         True "label" vector.
 
@@ -209,6 +183,7 @@ def compute_cost(AL, Y):
 
     """
     
+    AL =yhat
     m = Y.shape[1]
     cost = (-1/m) * np.sum(Y*np.log(AL) + (1-Y)*np.log(1-AL))
     cost = np.squeeze(cost)
@@ -216,14 +191,15 @@ def compute_cost(AL, Y):
     return cost
 
 
-def compute_cost_L2regularization(AL, Y, layers_dim, parameters, lambd):
+def compute_cost_L2regularization(yhat, Y, layers_dim, parameters, lambd):
     """
     Compute the cost function, sum of the loss function, with L2 regularization.
 
     Parameters
     ----------
-    AL : np.array of shape (1, m)
-        Probability vector corresponding to the label predictions. Also called yhat.
+    yhat : np.array of shape (1, m)
+        Probability vector corresponding to the label predictions. It's actually
+        the activation at the layer L : AL.
     Y : np.array of shape (1, m)
         True "label" vector.
     parameters : dict
@@ -237,32 +213,36 @@ def compute_cost_L2regularization(AL, Y, layers_dim, parameters, lambd):
         Cross-entropy cost.
 
     """
+    AL = yhat
     m = AL.shape[1]
     cross_entropy_cost = compute_cost(AL, Y)
-    cst = (1/m)*(lambd/2)
     
     somme = 0
     for l in range(1, len(layers_dim)):
         W = parameters["W"+str(l)]
         somme = somme + np.sum(np.square(W))
     
-    L2_regularization_cost = cst * somme
+    L2_regularization_cost = (1/m)*(lambd/2) * somme
     cost = cross_entropy_cost + L2_regularization_cost
     
     return cost
 
-def linear_backward(dZ, cache):
+
+
+def backward_pass(dA, cache, activation):
     """
-    Compute the backward pass
+    Compute the backward pass :
+    LINEAR -> dZ -> GRADS
 
     Parameters
     ----------
-    dZ : np.array of shape (n[l],1)
-        Gradient of the cost function with respect to the linear output 
-        (of current layer l).
+    dA : np.array
+         Post-activation gradient for current layer l.
     cache : tuple
-        Containing (A_prev, W, b) coming from the forward propagation in the 
-        current layer.
+        containing "linear_cache" and "activation_cache". These caches come from 
+        the forward pass.
+    activation : str
+        Activation to be used in this layer, stored as a text string: "sigmoid" or "relu".
 
     Returns
     -------
@@ -274,47 +254,28 @@ def linear_backward(dZ, cache):
         Gradient of the cost with respect to b (current layer l).
 
     """
-    A_prev, W, b = cache
-    m = A_prev.shape[1]
-    
-    dW = (1./m) * np.dot(dZ, A_prev.T)
-    db = (1./m) * np.sum(dZ, axis=1, keepdims=True)
-    dA_prev =  np.dot(W.T, dZ)
-    
-    return dA_prev, dW, db
-
-
-def linear_activation_backward(dA, cache, activation, dropout=None):
-    """
-    Implement the backward pass for the LINEAR->ACTIVATION layer.
-
-    Parameters
-    ----------
-    dA : np.array
-         Post-activation gradient for current layer l.
-    cache : tuple
-        Storing variable for computing backward propagation efficiently.
-    activation : str
-        Activation to be used in this layer, stored as a text string: "sigmoid" or "relu".
-
-    Returns
-    -------
-    dA_prev : np.arry of shape dA.shape
-        Post-activation gradient for current layer l-1.
-    dW : np.array 
-        Gradient of the cost with respect to W (current layer l).
-    db : TYPE
-        Gradient of the cost with respect to b (current layer l).
-
-    """
     linear_cache, activation_cache = cache
+    A_prev, W, b = linear_cache
+    m = A_prev.shape[1]
     
     if activation == 'relu':
         dZ = relu_backward(dA, activation_cache)
-        dA_prev, dW, db = linear_backward(dZ, linear_cache)
-        
     elif activation == 'sigmoid':
         dZ = sigmoid_backward(dA, activation_cache)
-        dA_prev, dW, db = linear_backward(dZ, linear_cache)
     
+    ### Compute grads
+    dW = (1./m) * np.dot(dZ, A_prev.T)
+    db = (1./m) * np.sum(dZ, axis=1, keepdims=True)
+    dA_prev =  np.dot(W.T, dZ)
+
     return dA_prev, dW, db
+
+
+
+
+
+
+
+
+
+
