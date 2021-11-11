@@ -10,7 +10,7 @@ import numpy as np
 
 import functions as fc
 
-def model_forward(X, parameters, keep_prob=1):
+def forward(X, parameters, keep_prob=1):
     """
     Implement the linear portion of forward propagation for a single layer (layer l)
 
@@ -71,7 +71,7 @@ def model_forward(X, parameters, keep_prob=1):
 
 
 
-def model_backward(AL, Y, caches, lambd=0, listD=[], keep_prob=1):
+def backward(AL, Y, caches, lambd=0, listD=[], keep_prob=1):
     """
     Implement the backward propagation for the 
     [LINEAR->RELU] * (L-1) -> LINEAR -> SIGMOID group.
@@ -212,7 +212,7 @@ def predict(X, y, parameters, training_set=True):
     p = np.zeros((1,m))
     
     # Forward pass
-    probas, caches, _ = model_forward(X, parameters)
+    probas, caches, _ = forward(X, parameters)
     
     for i in range(0, probas.shape[1]):
         if probas[0,i] > 0.5:

@@ -164,7 +164,7 @@ def forward_pass(A_prev, W, b, activation):
     return A, cache
 
 
-def compute_cost(yhat, Y):
+def compute_cost(yhat, Y, mini_batch_size=None):
     """
     Compute the cost function, sum of the loss function
 
@@ -175,23 +175,28 @@ def compute_cost(yhat, Y):
         the activation at the layer L : AL.
     Y : np.array of shape (1, m)
         True "label" vector.
+    mini_batch_size : int, optionnal
+        Arg used to trigger the normalization of the cost by 1/m if there is no
+        mini_batches. Default is None.
 
     Returns
     -------
     cost : float
-        Cross-entropy cost.
+        Cross-entropy cost function with or without dividing by number of 
+        training examples
 
     """
-    
-    AL =yhat
-    m = Y.shape[1]
-    cost = (-1/m) * np.sum(Y*np.log(AL) + (1-Y)*np.log(1-AL))
-    cost = np.squeeze(cost)
-    
+    AL = yhat
+
+    cost = np.sum(-np.log(AL)*Y - np.log(1-AL)*(1-Y))  
+    if mini_batch_size is None:
+        m = Y.shape[1]
+        cost = (1/m) * cost
+
     return cost
 
 
-def compute_cost_L2regularization(yhat, Y, layers_dim, parameters, lambd):
+def compute_cost_L2regularization(yhat, Y, layers_dim, parameters, lambd, mini_batch_size=None):
     """
     Compute the cost function, sum of the loss function, with L2 regularization.
 
@@ -215,7 +220,7 @@ def compute_cost_L2regularization(yhat, Y, layers_dim, parameters, lambd):
     """
     AL = yhat
     m = AL.shape[1]
-    cross_entropy_cost = compute_cost(AL, Y)
+    cross_entropy_cost = compute_cost(AL, Y, mini_batch_size)
     
     somme = 0
     for l in range(1, len(layers_dim)):
