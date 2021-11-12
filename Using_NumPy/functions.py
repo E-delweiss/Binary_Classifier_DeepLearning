@@ -148,8 +148,6 @@ def forward_pass(A_prev, W, b, activation):
         computing the backward pass efficiently.
 
     """
-    # print("Shape of W*Aprev : ", np.dot(W, A_prev).shape)
-    # print("Shape of b : ", b.shape)
     Z = np.dot(W, A_prev) + b
     
     if activation == "sigmoid":
