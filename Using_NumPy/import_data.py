@@ -109,6 +109,7 @@ def random_mini_batches(X, Y, mini_batch_size = 64):
     
     # Shuffling X, Y
     permutation = list(np.random.permutation(m))
+    print(permutation)
     shuffled_X = X[:, permutation]
     shuffled_Y = Y[:, permutation].reshape((1, m))
     

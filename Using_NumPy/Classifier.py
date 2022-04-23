@@ -91,6 +91,7 @@ def NN_model(X, Y, layers_dims, optimizer='gd', learning_rate = 0.0075, mini_bat
     for epoch in range(1, epochs+1):
         # Chose a minibatch per epoch
         minibatches = random_mini_batches(X, Y, mini_batch_size)
+        break
         cost_total = 0
         
         # Training through minibatch
@@ -117,6 +118,7 @@ def NN_model(X, Y, layers_dims, optimizer='gd', learning_rate = 0.0075, mini_bat
             elif optimizer == "momentum":
                 parameters, v = optim.momentum_update_parameters(parameters, grads, v, beta, learning_rate)
             elif optimizer == "adam":
+                t = t+1
                 parameters, v, s, _, _ = optim.adam_update_parameters(parameters, grads, v, s,
                                                                t, learning_rate, beta1, beta2,  epsilon)
         # Compute average cost
@@ -138,6 +140,7 @@ def NN_model(X, Y, layers_dims, optimizer='gd', learning_rate = 0.0075, mini_bat
 parameters, costs = NN_model(data_train, 
                              label_train, 
                              layers_dims, 
+                             optimizer = 'adam',
                              learning_rate = 0.01,
                              lambd=0,
                              keep_prob=1,
