@@ -1,6 +1,6 @@
 # Binary Classifier
 
-I first created this project to help me understand how to construct a Neural Network through a mathematical point of view, without deep learning frameworks.
+I first created this project to help me understanding the construction of a Neural Network through a mathematical point of view, without deep learning frameworks.
 
 To go further in my deep learning training (pun intended), I've been working on a 3-step project to also get used to deep learning frameworks (such as Tensorflow and Pytorch) and get a better understanding of a DL project and be able to link the framework API with my DL knowledge through NumPy.
 
